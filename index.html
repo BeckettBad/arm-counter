@@ -64,6 +64,20 @@
 
   </div>
 
+  <!-- Name prompt modal -->
+  <div class="name-modal" id="name-modal" style="display:none;"
+       role="dialog" aria-modal="true" aria-label="Enter a name">
+    <div class="name-modal-card">
+      <p class="name-modal-title">Who is this?</p>
+      <input type="text" id="name-input" placeholder="Enter a name…"
+             maxlength="30" autocomplete="off" autocapitalize="words">
+      <div class="name-modal-actions">
+        <button id="name-skip">Skip</button>
+        <button id="name-confirm">Add</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Lightbox for full-size history photo -->
   <div class="lightbox" id="lightbox" style="display:none;"
        role="dialog" aria-modal="true">

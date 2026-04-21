@@ -16,7 +16,8 @@ const RAGE_LEVELS = [
   { min: 24, label: 'MAXIMUM RAGE',  color: '#ff1744' },
 ];
 
-let mode = 'lines';
+let mode        = 'lines';
+let pendingPhoto = null;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
@@ -33,6 +34,13 @@ function init() {
     if (e.key === 'Enter' || e.key === ' ') fileInput.click();
   });
   fileInput.addEventListener('change', handleUpload);
+
+  // Name modal
+  document.getElementById('name-confirm').addEventListener('click', confirmName);
+  document.getElementById('name-skip').addEventListener('click', () => commitUpload(''));
+  document.getElementById('name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmName();
+  });
 
   // Lightbox close
   document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
@@ -93,38 +101,54 @@ function handleUpload(e) {
 
   const reader = new FileReader();
   reader.onload = ev => {
-    const photo = ev.target.result;
-    const count = getCount() + 1;
-    setCount(count);
-
-    // Save current photo and history entry
-    localStorage.setItem(MODES[mode].photoKey, photo);
-    const hist = loadHistory();
-    hist.unshift({ photo, count, time: Date.now() });
-    saveHistory(hist);
-
-    // Update photo circle
-    const img = document.getElementById('display-photo');
-    img.src           = photo;
-    img.style.display = 'block';
-    document.getElementById('photo-placeholder').style.display = 'none';
-
-    // Flash animation
-    const wrapper = document.getElementById('photo-wrapper');
-    wrapper.classList.remove('photo-flash');
-    requestAnimationFrame(() => wrapper.classList.add('photo-flash'));
-
-    // Animate count
-    const el = document.getElementById('count-number');
-    el.textContent = count;
-    el.classList.remove('pop');
-    requestAnimationFrame(() => el.classList.add('pop'));
-
-    updateRageMeter(count);
-    renderHistory();
+    pendingPhoto = ev.target.result;
+    // Show name modal before committing
+    document.getElementById('name-modal').style.display = 'flex';
+    const input = document.getElementById('name-input');
+    input.value = '';
+    setTimeout(() => input.focus(), 50);
   };
   reader.readAsDataURL(file);
   e.target.value = '';
+}
+
+function confirmName() {
+  const name = document.getElementById('name-input').value.trim();
+  commitUpload(name);
+}
+
+function commitUpload(name) {
+  document.getElementById('name-modal').style.display = 'none';
+  if (!pendingPhoto) return;
+
+  const photo = pendingPhoto;
+  pendingPhoto = null;
+
+  const count = getCount() + 1;
+  setCount(count);
+
+  localStorage.setItem(MODES[mode].photoKey, photo);
+  const hist = loadHistory();
+  hist.unshift({ photo, count, name: name || '', time: Date.now() });
+  saveHistory(hist);
+
+  // Update photo circle
+  const img = document.getElementById('display-photo');
+  img.src           = photo;
+  img.style.display = 'block';
+  document.getElementById('photo-placeholder').style.display = 'none';
+
+  const wrapper = document.getElementById('photo-wrapper');
+  wrapper.classList.remove('photo-flash');
+  requestAnimationFrame(() => wrapper.classList.add('photo-flash'));
+
+  const el = document.getElementById('count-number');
+  el.textContent = count;
+  el.classList.remove('pop');
+  requestAnimationFrame(() => el.classList.add('pop'));
+
+  updateRageMeter(count);
+  renderHistory();
 }
 
 // ── Rage meter ────────────────────────────────────────────────────────────────
@@ -189,11 +213,19 @@ function renderHistory() {
     thumb.appendChild(img);
     thumb.appendChild(badge);
 
+    if (entry.name) {
+      const nameEl = document.createElement('span');
+      nameEl.className   = 'history-name';
+      nameEl.textContent = entry.name;
+      item.appendChild(thumb);
+      item.appendChild(nameEl);
+    } else {
+      item.appendChild(thumb);
+    }
+
     const timeEl = document.createElement('span');
     timeEl.className   = 'history-time';
     timeEl.textContent = relativeTime(entry.time);
-
-    item.appendChild(thumb);
     item.appendChild(timeEl);
 
     const open = () => openLightbox(entry);
@@ -217,8 +249,9 @@ function relativeTime(ts) {
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 function openLightbox(entry) {
   document.getElementById('lightbox-img').src       = entry.photo;
+  const who = entry.name ? entry.name + '  ·  ' : '';
   document.getElementById('lightbox-info').textContent =
-    'Count: ' + entry.count + '  ·  ' + relativeTime(entry.time);
+    who + 'Count: ' + entry.count + '  ·  ' + relativeTime(entry.time);
   document.getElementById('lightbox').style.display = 'flex';
 }
 

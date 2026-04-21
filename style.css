@@ -167,10 +167,96 @@ body {
   padding: 1px 4px;
 }
 
+.history-name {
+  font-size: 0.7rem;
+  color: #ccc;
+  font-weight: 600;
+  max-width: 60px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .history-time {
   font-size: 0.62rem;
   color: #444;
 }
+
+/* ── Name modal ── */
+.name-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.75);
+}
+
+.name-modal-card {
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 24px 20px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.name-modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f0f0f0;
+  text-align: center;
+}
+
+.name-modal-card input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  color: #f0f0f0;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.name-modal-card input:focus {
+  border-color: #666;
+}
+
+.name-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.name-modal-actions button {
+  flex: 1;
+  padding: 11px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#name-skip {
+  background: #2a2a2a;
+  color: #888;
+}
+
+#name-skip:hover { background: #333; }
+
+#name-confirm {
+  background: #f0f0f0;
+  color: #111;
+}
+
+#name-confirm:hover { background: #fff; }
 
 .history-empty {
   font-size: 0.82rem;
