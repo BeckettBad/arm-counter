@@ -17,8 +17,9 @@ const RAGE_LEVELS = [
   { min: 10, label: 'POSEIDON STATUS', color: '#ff1744' },
 ];
 
-let mode        = 'lines';
-let pendingPhoto = null;
+let mode             = 'lines';
+let pendingPhoto     = null;
+let lightboxEntryId  = null;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
@@ -45,6 +46,9 @@ function init() {
   document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
   document.getElementById('lightbox-backdrop').addEventListener('click', closeLightbox);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+  document.getElementById('lightbox-count-plus').addEventListener('click',  () => adjustLightboxCount(1));
+  document.getElementById('lightbox-count-minus').addEventListener('click', () => adjustLightboxCount(-1));
 
   document.getElementById('reset-btn').addEventListener('click', resetAll);
 
@@ -74,7 +78,7 @@ function renderAll() {
 // ── Count ─────────────────────────────────────────────────────────────────────
 // Total is always derived from history — never stored separately
 function calcTotal(hist) {
-  return hist.reduce((sum, e) => sum + (e.entryCount || 1), 0);
+  return hist.reduce((sum, e) => sum + (e.entryCount ?? 1), 0);
 }
 
 // ── Current photo ─────────────────────────────────────────────────────────────
@@ -184,8 +188,13 @@ function updateRageMeter(count) {
 
 // ── History ───────────────────────────────────────────────────────────────────
 function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(MODES[mode].histKey) || '[]'); }
-  catch { return []; }
+  try {
+    const sessionStart = parseInt(localStorage.getItem(KEY_RESET) || '0', 10);
+    if (!sessionStart) return [];
+    const all = JSON.parse(localStorage.getItem(MODES[mode].histKey) || '[]');
+    // Only return entries that belong to the active 24h window
+    return all.filter(e => e.time >= sessionStart && e.time < sessionStart + RESET_MS);
+  } catch { return []; }
 }
 
 function saveHistory(hist) {
@@ -220,7 +229,7 @@ function renderHistory(hist) {
 
     const badge = document.createElement('span');
     badge.className   = 'history-badge';
-    badge.textContent = entry.entryCount || 1;
+    badge.textContent = entry.entryCount ?? 1;
 
     thumb.appendChild(img);
     thumb.appendChild(badge);
@@ -258,14 +267,32 @@ function relativeTime(ts) {
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 function openLightbox(entry) {
+  lightboxEntryId = entry.id;
   document.getElementById('lightbox-img').src = entry.photo;
-  const who = entry.name ? entry.name + '  ·  ' : '';
-  document.getElementById('lightbox-info').textContent =
-    who + 'Count: ' + (entry.entryCount || 1) + '  ·  ' + relativeTime(entry.time);
+  renderLightboxEntry(entry);
   document.getElementById('lightbox').style.display = 'flex';
 }
 
+function renderLightboxEntry(entry) {
+  const who = entry.name ? entry.name + '  ·  ' : '';
+  document.getElementById('lightbox-info').textContent = who + relativeTime(entry.time);
+  document.getElementById('lightbox-count-val').textContent = entry.entryCount ?? 1;
+}
+
+function adjustLightboxCount(delta) {
+  if (!lightboxEntryId) return;
+  const hist  = loadHistory();
+  const entry = hist.find(e => e.id === lightboxEntryId);
+  if (!entry) return;
+
+  entry.entryCount = Math.max(0, (entry.entryCount ?? 1) + delta);
+  saveHistory(hist);
+  renderLightboxEntry(entry);
+  renderAll();
+}
+
 function closeLightbox() {
+  lightboxEntryId = null;
   document.getElementById('lightbox').style.display = 'none';
   document.getElementById('lightbox-img').src = '';
 }
