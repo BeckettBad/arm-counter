@@ -11,44 +11,50 @@
 
     <!-- Mode selector -->
     <div class="mode-toggle" role="tablist">
-      <button class="mode-btn active" data-mode="lines"
-              role="tab" aria-selected="true">Lines</button>
-      <button class="mode-btn" data-mode="bags"
-              role="tab" aria-selected="false">Bags</button>
+      <button class="mode-btn active" data-mode="lines" role="tab">Lines</button>
+      <button class="mode-btn"        data-mode="bags"  role="tab">Bags</button>
     </div>
-
-    <!-- Photo — tap to upload and add 1 -->
-    <div class="photo-wrapper" id="photo-wrapper"
-         role="button" tabindex="0" aria-label="Upload photo to add count">
-      <img id="display-photo" src="cover.jpg" alt="Counter photo"
-           onerror="this.style.display='none';
-                    document.getElementById('photo-placeholder').style.display='flex';">
-      <div class="photo-placeholder" id="photo-placeholder" style="display:none;">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.5">
-          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-          <circle cx="12" cy="13" r="4"/>
-        </svg>
-        <span>Tap to add</span>
-      </div>
-      <div class="upload-hint">Tap to add +1</div>
-    </div>
-
-    <input type="file" id="photo-input" accept="image/*"
-           style="display:none;" aria-hidden="true">
 
     <!-- Count -->
     <div class="count-display">
       <span class="count-number" id="count-number">0</span>
-      <span class="count-label" id="count-label">lines</span>
+      <span class="count-label"  id="count-label">lines</span>
     </div>
 
-    <!-- Explicit upload button as backup -->
-    <button class="upload-btn" id="upload-btn">Add +1 with photo</button>
+    <!-- Rage meter -->
+    <div class="rage-section">
+      <div class="rage-header">
+        <span class="rage-label"    id="rage-label">CALM</span>
+        <span class="rage-fraction" id="rage-fraction">0 / 30</span>
+      </div>
+      <div class="rage-track">
+        <div class="rage-fill" id="rage-fill"></div>
+      </div>
+    </div>
 
-    <!-- Reset timer -->
+    <!-- Upload -->
+    <button class="upload-btn" id="upload-btn">Add +1 with photo</button>
+    <input  type="file" id="photo-input" accept="image/*"
+            style="display:none;" aria-hidden="true">
+
+    <!-- History -->
+    <div class="history-section">
+      <span class="history-label">History</span>
+      <div class="history-scroll" id="history-scroll">
+        <span class="history-empty" id="history-empty">No uploads yet</span>
+      </div>
+    </div>
+
     <span class="timer">Resets in <span id="countdown">--:--:--</span></span>
 
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" style="display:none;" role="dialog" aria-modal="true">
+    <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+    <img id="lightbox-img" src="" alt="Full size photo">
+    <div class="lightbox-info" id="lightbox-info"></div>
+    <span class="lightbox-close" id="lightbox-close" role="button" tabindex="0">×</span>
   </div>
 
   <script src="app.js"></script>
