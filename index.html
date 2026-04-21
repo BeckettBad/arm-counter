@@ -9,12 +9,6 @@
 <body>
   <div class="container">
 
-    <!-- Mode selector -->
-    <div class="mode-toggle" role="tablist">
-      <button class="mode-btn active" data-mode="lines" role="tab">Lines</button>
-      <button class="mode-btn"        data-mode="bags"  role="tab">Bags</button>
-    </div>
-
     <!-- Current photo circle -->
     <div class="photo-wrapper" id="photo-wrapper"
          role="button" tabindex="0" aria-label="Upload photo to add count">
@@ -43,7 +37,7 @@
     <!-- Count -->
     <div class="count-display">
       <span class="count-number" id="count-number">0</span>
-      <span class="count-label"  id="count-label">lines</span>
+      <span class="count-label">lines</span>
     </div>
 
     <!-- Rage meter -->
@@ -96,6 +90,6 @@
           role="button" tabindex="0">×</span>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

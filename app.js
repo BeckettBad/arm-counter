@@ -1,13 +1,28 @@
-const NS          = 'counter_';
-const KEY_RESET   = NS + 'last_reset';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {
+  getFirestore, doc, collection,
+  onSnapshot, setDoc, addDoc, updateDoc, deleteDoc,
+  query, where, getDocs, runTransaction,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+// ── Paste your Firebase project config here ───────────────────────────────────
+const firebaseConfig = {
+  apiKey:            'YOUR_API_KEY',
+  authDomain:        'YOUR_PROJECT.firebaseapp.com',
+  projectId:         'YOUR_PROJECT_ID',
+  storageBucket:     'YOUR_PROJECT.appspot.com',
+  messagingSenderId: 'YOUR_SENDER_ID',
+  appId:             'YOUR_APP_ID',
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
 const RESET_MS    = 24 * 60 * 60 * 1000;
 const RAGE_MAX    = 10;
-const MAX_HISTORY = 15; // cap so base64 photos don't blow localStorage
-
-const MODES = {
-  lines: { label: 'lines', histKey: NS + 'lines_hist' },
-  bags:  { label: 'bags',  histKey: NS + 'bags_hist'  },
-};
+const MAX_HISTORY = 15;
+const MAX_PX      = 600;
 
 const RAGE_LEVELS = [
   { min: 0,  label: 'CALM',            color: '#7c4dff' },
@@ -17,18 +32,14 @@ const RAGE_LEVELS = [
   { min: 10, label: 'POSEIDON STATUS', color: '#ff1744' },
 ];
 
-let mode             = 'lines';
-let pendingPhoto     = null;
-let lightboxEntryId  = null;
+let pendingPhoto    = null;
+let lightboxEntryId = null;
+let sessionStart    = 0;
+let historyCache    = [];
+let unsubUploads    = null;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
-  ensureReset();
-
-  document.querySelectorAll('.mode-btn').forEach(btn =>
-    btn.addEventListener('click', () => switchMode(btn.dataset.mode))
-  );
-
   const fileInput = document.getElementById('photo-input');
   document.getElementById('upload-btn').addEventListener('click',  () => fileInput.click());
   document.getElementById('photo-wrapper').addEventListener('click', () => fileInput.click());
@@ -52,40 +63,65 @@ function init() {
 
   document.getElementById('reset-btn').addEventListener('click', resetAll);
 
-  renderAll();
+  listenToSession();
   startCountdown();
 }
 
-// ── Mode ──────────────────────────────────────────────────────────────────────
-function switchMode(next) {
-  mode = next;
-  document.querySelectorAll('.mode-btn').forEach(btn =>
-    btn.classList.toggle('active', btn.dataset.mode === mode)
-  );
-  renderAll();
+// ── Session listener ──────────────────────────────────────────────────────────
+function listenToSession() {
+  onSnapshot(doc(db, 'meta', 'session'), snap => {
+    const newStart = snap.data()?.startTime || 0;
+    const expired  = newStart > 0 && Date.now() - newStart > RESET_MS;
+
+    if (expired) {
+      setDoc(doc(db, 'meta', 'session'), { startTime: 0 });
+      return;
+    }
+
+    if (newStart !== sessionStart) {
+      sessionStart = newStart;
+      subscribeToUploads(sessionStart);
+    }
+  });
 }
 
+// ── Uploads real-time listener ────────────────────────────────────────────────
+function subscribeToUploads(sid) {
+  if (unsubUploads) unsubUploads();
+  historyCache = [];
+
+  if (!sid) {
+    renderAll();
+    return;
+  }
+
+  const q = query(collection(db, 'uploads'), where('sessionId', '==', sid));
+  unsubUploads = onSnapshot(q, snap => {
+    historyCache = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => b.time - a.time)
+      .slice(0, MAX_HISTORY);
+    renderAll();
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
 function renderAll() {
-  const hist  = loadHistory();
-  const total = calcTotal(hist);
+  const total = calcTotal(historyCache);
   document.getElementById('count-number').textContent = total;
-  document.getElementById('count-label').textContent  = MODES[mode].label;
   updateRageMeter(total);
-  updateCurrentPhoto(hist);
-  renderHistory(hist);
+  updateCurrentPhoto(historyCache);
+  renderHistory(historyCache);
 }
 
-// ── Count ─────────────────────────────────────────────────────────────────────
-// Total is always derived from history — never stored separately
 function calcTotal(hist) {
   return hist.reduce((sum, e) => sum + (e.entryCount ?? 1), 0);
 }
 
-// ── Current photo ─────────────────────────────────────────────────────────────
 function updateCurrentPhoto(hist) {
   const img = document.getElementById('display-photo');
   const ph  = document.getElementById('photo-placeholder');
-  if (hist && hist.length) {
+  if (hist.length) {
     img.src           = hist[0].photo;
     img.style.display = 'block';
     ph.style.display  = 'none';
@@ -94,6 +130,22 @@ function updateCurrentPhoto(hist) {
     img.style.display = 'block';
     ph.style.display  = 'none';
   }
+}
+
+// ── Image compression ─────────────────────────────────────────────────────────
+function compressImage(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale  = Math.min(1, MAX_PX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.72));
+    };
+    img.src = dataUrl;
+  });
 }
 
 // ── Upload flow ───────────────────────────────────────────────────────────────
@@ -117,65 +169,63 @@ function confirmName() {
   commitUpload(document.getElementById('name-input').value.trim());
 }
 
-function commitUpload(name) {
+async function commitUpload(name) {
   document.getElementById('name-modal').style.display = 'none';
   if (!pendingPhoto) return;
 
-  const photo = pendingPhoto;
+  const rawPhoto = pendingPhoto;
   pendingPhoto = null;
 
-  // Start 24h window on first upload of a new cycle
-  if (!localStorage.getItem(KEY_RESET)) {
-    localStorage.setItem(KEY_RESET, Date.now().toString());
-  }
+  const photo = await compressImage(rawPhoto);
 
-  const hist = loadHistory();
-  hist.unshift({
-    id:         Date.now().toString() + Math.random().toString(36).slice(2),
-    photo,
-    entryCount: 1,
-    name:       name || '',
-    time:       Date.now(),
-  });
+  // Immediate visual feedback before Firestore round-trip
+  const previewTotal = calcTotal(historyCache) + 1;
+  const countEl = document.getElementById('count-number');
+  countEl.textContent = previewTotal;
+  countEl.classList.remove('pop');
+  requestAnimationFrame(() => countEl.classList.add('pop'));
+  updateRageMeter(previewTotal);
 
-  // Hard cap — oldest entry dropped to protect localStorage quota
-  if (hist.length > MAX_HISTORY) hist.length = MAX_HISTORY;
-
-  const total = calcTotal(hist);
-
-  // ── UI updates happen BEFORE storage so they always run ──
-  const el = document.getElementById('count-number');
-  el.textContent = total;
-  el.classList.remove('pop');
-  requestAnimationFrame(() => el.classList.add('pop'));
-
-  updateRageMeter(total);
-  updateCurrentPhoto(hist);
+  const imgEl = document.getElementById('display-photo');
+  imgEl.src           = photo;
+  imgEl.style.display = 'block';
+  document.getElementById('photo-placeholder').style.display = 'none';
 
   const wrapper = document.getElementById('photo-wrapper');
   wrapper.classList.remove('photo-flash');
   requestAnimationFrame(() => wrapper.classList.add('photo-flash'));
 
-  renderHistory(hist);
+  const sid = await ensureSessionActive();
 
-  // ── Persist (storage errors won't break the UI) ──
-  try {
-    saveHistory(hist);
-  } catch (_) {
-    // Storage full — drop oldest and retry once
-    hist.pop();
-    try { saveHistory(hist); } catch (_2) {}
-  }
+  await addDoc(collection(db, 'uploads'), {
+    sessionId:  sid,
+    photo,
+    entryCount: 1,
+    name:       name || '',
+    time:       Date.now(),
+  });
+  // onSnapshot fires → historyCache updates → renderAll() shows authoritative state
+}
+
+async function ensureSessionActive() {
+  const sessionRef = doc(db, 'meta', 'session');
+  return runTransaction(db, async tx => {
+    const snap     = await tx.get(sessionRef);
+    const existing = snap.data()?.startTime || 0;
+    if (existing && Date.now() - existing <= RESET_MS) return existing;
+    const newStart = Date.now();
+    tx.set(sessionRef, { startTime: newStart });
+    return newStart;
+  });
 }
 
 // ── Rage meter ────────────────────────────────────────────────────────────────
 function updateRageMeter(count) {
-  const pct   = Math.min(count / RAGE_MAX, 1);
   const fill  = document.getElementById('rage-fill');
   const label = document.getElementById('rage-label');
   const frac  = document.getElementById('rage-fraction');
-
   const level = [...RAGE_LEVELS].reverse().find(l => count >= l.min) || RAGE_LEVELS[0];
+  const pct   = Math.min(count / RAGE_MAX, 1);
 
   fill.style.width      = (pct * 100) + '%';
   fill.style.background = `linear-gradient(to right, ${level.color}99, ${level.color})`;
@@ -187,22 +237,7 @@ function updateRageMeter(count) {
 }
 
 // ── History ───────────────────────────────────────────────────────────────────
-function loadHistory() {
-  try {
-    const sessionStart = parseInt(localStorage.getItem(KEY_RESET) || '0', 10);
-    if (!sessionStart) return [];
-    const all = JSON.parse(localStorage.getItem(MODES[mode].histKey) || '[]');
-    // Only return entries that belong to the active 24h window
-    return all.filter(e => e.time >= sessionStart && e.time < sessionStart + RESET_MS);
-  } catch { return []; }
-}
-
-function saveHistory(hist) {
-  localStorage.setItem(MODES[mode].histKey, JSON.stringify(hist));
-}
-
 function renderHistory(hist) {
-  hist = hist || loadHistory();
   const strip = document.getElementById('history-strip');
   strip.innerHTML = '';
 
@@ -223,7 +258,7 @@ function renderHistory(hist) {
     const thumb = document.createElement('div');
     thumb.className = 'history-thumb';
 
-    const img   = document.createElement('img');
+    const img = document.createElement('img');
     img.src = entry.photo;
     img.alt = entry.name || 'Upload';
 
@@ -279,16 +314,17 @@ function renderLightboxEntry(entry) {
   document.getElementById('lightbox-count-val').textContent = entry.entryCount ?? 1;
 }
 
-function adjustLightboxCount(delta) {
+async function adjustLightboxCount(delta) {
   if (!lightboxEntryId) return;
-  const hist  = loadHistory();
-  const entry = hist.find(e => e.id === lightboxEntryId);
+  const entry = historyCache.find(e => e.id === lightboxEntryId);
   if (!entry) return;
 
-  entry.entryCount = Math.max(0, (entry.entryCount ?? 1) + delta);
-  saveHistory(hist);
+  const newCount   = Math.max(0, (entry.entryCount ?? 1) + delta);
+  entry.entryCount = newCount;
   renderLightboxEntry(entry);
   renderAll();
+
+  await updateDoc(doc(db, 'uploads', lightboxEntryId), { entryCount: newCount });
 }
 
 function closeLightbox() {
@@ -298,41 +334,31 @@ function closeLightbox() {
 }
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
-function resetAll() {
+async function resetAll() {
   if (!confirm('Clear all history and reset the timer?')) return;
-  Object.keys(localStorage)
-    .filter(k => k.startsWith(NS))
-    .forEach(k => localStorage.removeItem(k));
-  renderAll();
-}
 
-// ── 24h window ────────────────────────────────────────────────────────────────
-function ensureReset() {
-  const last = parseInt(localStorage.getItem(KEY_RESET) || '0', 10);
-  if (last > 0 && Date.now() - last > RESET_MS) {
-    Object.keys(localStorage)
-      .filter(k => k.startsWith(NS))
-      .forEach(k => localStorage.removeItem(k));
+  if (sessionStart) {
+    const snap = await getDocs(
+      query(collection(db, 'uploads'), where('sessionId', '==', sessionStart))
+    );
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
   }
+
+  await setDoc(doc(db, 'meta', 'session'), { startTime: 0 });
 }
 
+// ── Countdown ─────────────────────────────────────────────────────────────────
 function startCountdown() {
   function tick() {
-    const last = parseInt(localStorage.getItem(KEY_RESET) || '0', 10);
-
-    if (!last) {
+    if (!sessionStart) {
       document.getElementById('countdown').textContent = 'Upload to start';
       return;
     }
-
-    const remaining = Math.max(0, last + RESET_MS - Date.now());
+    const remaining = Math.max(0, sessionStart + RESET_MS - Date.now());
     if (remaining === 0) {
-      ensureReset();
-      renderAll();
       document.getElementById('countdown').textContent = 'Upload to start';
       return;
     }
-
     const h = Math.floor(remaining / 3600000);
     const m = Math.floor((remaining % 3600000) / 60000);
     const s = Math.floor((remaining % 60000) / 1000);

@@ -23,34 +23,6 @@ body {
   gap: 22px;
 }
 
-/* ── Mode toggle ── */
-.mode-toggle {
-  display: flex;
-  background: #222;
-  border-radius: 10px;
-  padding: 4px;
-  gap: 4px;
-  width: 100%;
-}
-
-.mode-btn {
-  flex: 1;
-  padding: 10px 0;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: #666;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.mode-btn.active {
-  background: #f0f0f0;
-  color: #111;
-}
-
 /* ── Photo circle ── */
 .photo-wrapper {
   width: 220px;
