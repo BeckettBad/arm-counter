@@ -127,6 +127,11 @@ function commitUpload(name) {
   const count = getCount() + 1;
   setCount(count);
 
+  // Start the 24h window on first upload of a new cycle
+  if (!localStorage.getItem(KEY_RESET)) {
+    localStorage.setItem(KEY_RESET, Date.now().toString());
+  }
+
   localStorage.setItem(MODES[mode].photoKey, photo);
   const hist = loadHistory();
   hist.unshift({ photo, count, name: name || '', time: Date.now() });
@@ -263,19 +268,32 @@ function closeLightbox() {
 // ── 24 h reset ────────────────────────────────────────────────────────────────
 function ensureReset() {
   const last = parseInt(localStorage.getItem(KEY_RESET) || '0', 10);
-  if (Date.now() - last > RESET_MS) {
+  // Only reset if a window was actually started and has now expired
+  if (last > 0 && Date.now() - last > RESET_MS) {
     Object.keys(localStorage)
       .filter(k => k.startsWith(NS))
       .forEach(k => localStorage.removeItem(k));
-    localStorage.setItem(KEY_RESET, Date.now().toString());
+    // Do NOT set KEY_RESET here — it starts again on the next first upload
   }
 }
 
 function startCountdown() {
   function tick() {
-    const last      = parseInt(localStorage.getItem(KEY_RESET) || Date.now().toString(), 10);
+    const last = parseInt(localStorage.getItem(KEY_RESET) || '0', 10);
+
+    if (!last) {
+      document.getElementById('countdown').textContent = 'Upload to start';
+      return;
+    }
+
     const remaining = Math.max(0, last + RESET_MS - Date.now());
-    if (remaining === 0) { ensureReset(); renderAll(); }
+
+    if (remaining === 0) {
+      ensureReset();
+      renderAll();
+      document.getElementById('countdown').textContent = 'Upload to start';
+      return;
+    }
 
     const h = Math.floor(remaining / 3600000);
     const m = Math.floor((remaining % 3600000) / 60000);
