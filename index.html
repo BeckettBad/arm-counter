@@ -3,78 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arm Counter</title>
+  <title>Counter</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Arm Counter</h1>
 
-    <div class="timer-bar">
-      <span>Resets in:</span>
-      <span id="countdown">--:--:--</span>
+    <!-- Mode selector -->
+    <div class="mode-toggle" role="tablist">
+      <button class="mode-btn active" data-mode="lines"
+              role="tab" aria-selected="true">Lines</button>
+      <button class="mode-btn" data-mode="bags"
+              role="tab" aria-selected="false">Bags</button>
     </div>
 
-    <!-- Rotating photo pool display -->
-    <div class="photo-wrapper" id="photo-wrapper" role="button"
-         aria-label="Add photo to pool" tabindex="0">
-      <div class="photo-placeholder" id="photo-placeholder">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+    <!-- Photo — tap to upload and add 1 -->
+    <div class="photo-wrapper" id="photo-wrapper"
+         role="button" tabindex="0" aria-label="Upload photo to add count">
+      <img id="display-photo" src="cover.jpg" alt="Counter photo"
+           onerror="this.style.display='none';
+                    document.getElementById('photo-placeholder').style.display='flex';">
+      <div class="photo-placeholder" id="photo-placeholder" style="display:none;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="1.5">
-          <rect x="3" y="3" width="18" height="18" rx="3"/>
-          <circle cx="8.5" cy="8.5" r="1.5"/>
-          <path d="M21 15l-5-5L5 21"/>
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+          <circle cx="12" cy="13" r="4"/>
         </svg>
-        <span>Add photos to pool</span>
+        <span>Tap to add</span>
       </div>
-      <img id="arm-photo" src="" alt="Current arm photo" style="display:none;">
-      <div class="upload-overlay">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/>
-          <line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        <span>Add to pool</span>
-      </div>
+      <div class="upload-hint">Tap to add +1</div>
     </div>
 
-    <!-- Pool management row -->
-    <div class="pool-controls">
-      <span class="pool-badge" id="pool-badge"></span>
-      <button class="pool-clear" id="pool-clear" style="display:none"
-              aria-label="Clear photo pool">Clear pool</button>
-    </div>
-
-    <input type="file" id="photo-input" accept="image/*" multiple
+    <input type="file" id="photo-input" accept="image/*"
            style="display:none;" aria-hidden="true">
 
-    <!-- Rage meter -->
-    <div class="rage-section">
-      <div class="rage-header">
-        <span class="rage-label" id="rage-label">CALM</span>
-        <span class="rage-fraction" id="rage-fraction">0 / 20</span>
-      </div>
-      <div class="rage-track" aria-label="Rage meter">
-        <div class="rage-fill" id="rage-fill"></div>
-      </div>
+    <!-- Count -->
+    <div class="count-display">
+      <span class="count-number" id="count-number">0</span>
+      <span class="count-label" id="count-label">lines</span>
     </div>
 
-    <!-- Counter -->
-    <div class="counter-section">
-      <div class="count-display">
-        <span id="arm-count">0</span>
-        <span class="label">arms</span>
-      </div>
-      <div class="controls">
-        <button class="btn-round" id="btn-minus" aria-label="Remove arm">−</button>
-        <input type="range" id="arm-slider" min="0" max="20" value="0"
-               aria-label="Arm count slider">
-        <button class="btn-round" id="btn-plus" aria-label="Add arm">+</button>
-      </div>
-    </div>
+    <!-- Explicit upload button as backup -->
+    <button class="upload-btn" id="upload-btn">Add +1 with photo</button>
 
-    <!-- Per-arm finger links -->
-    <div class="arms-list" id="arms-list" aria-live="polite"></div>
+    <!-- Reset timer -->
+    <span class="timer">Resets in <span id="countdown">--:--:--</span></span>
+
   </div>
 
   <script src="app.js"></script>
