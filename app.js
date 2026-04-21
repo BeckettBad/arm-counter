@@ -4,8 +4,8 @@ const RESET_MS  = 24 * 60 * 60 * 1000;
 const RAGE_MAX  = 30;
 
 const MODES = {
-  lines: { label: 'lines', key: NS + 'lines', histKey: NS + 'lines_hist' },
-  bags:  { label: 'bags',  key: NS + 'bags',  histKey: NS + 'bags_hist'  },
+  lines: { label: 'lines', key: NS + 'lines', histKey: NS + 'lines_hist', photoKey: NS + 'lines_photo' },
+  bags:  { label: 'bags',  key: NS + 'bags',  histKey: NS + 'bags_hist',  photoKey: NS + 'bags_photo'  },
 };
 
 const RAGE_LEVELS = [
@@ -28,6 +28,10 @@ function init() {
 
   const fileInput = document.getElementById('photo-input');
   document.getElementById('upload-btn').addEventListener('click', () => fileInput.click());
+  document.getElementById('photo-wrapper').addEventListener('click', () => fileInput.click());
+  document.getElementById('photo-wrapper').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+  });
   fileInput.addEventListener('change', handleUpload);
 
   // Lightbox close
@@ -55,6 +59,22 @@ function renderAll() {
   document.getElementById('count-label').textContent  = cfg.label;
   updateRageMeter(count);
   renderHistory();
+  updateCurrentPhoto();
+}
+
+function updateCurrentPhoto() {
+  const saved = localStorage.getItem(MODES[mode].photoKey);
+  const img   = document.getElementById('display-photo');
+  const ph    = document.getElementById('photo-placeholder');
+  if (saved) {
+    img.src           = saved;
+    img.style.display = 'block';
+    ph.style.display  = 'none';
+  } else {
+    img.src           = 'cover.jpg';
+    img.style.display = 'block';
+    ph.style.display  = 'none';
+  }
 }
 
 // ── Count helpers ─────────────────────────────────────────────────────────────
@@ -77,10 +97,22 @@ function handleUpload(e) {
     const count = getCount() + 1;
     setCount(count);
 
-    // Save to history (newest first)
+    // Save current photo and history entry
+    localStorage.setItem(MODES[mode].photoKey, photo);
     const hist = loadHistory();
     hist.unshift({ photo, count, time: Date.now() });
     saveHistory(hist);
+
+    // Update photo circle
+    const img = document.getElementById('display-photo');
+    img.src           = photo;
+    img.style.display = 'block';
+    document.getElementById('photo-placeholder').style.display = 'none';
+
+    // Flash animation
+    const wrapper = document.getElementById('photo-wrapper');
+    wrapper.classList.remove('photo-flash');
+    requestAnimationFrame(() => wrapper.classList.add('photo-flash'));
 
     // Animate count
     const el = document.getElementById('count-number');
@@ -124,7 +156,7 @@ function saveHistory(hist) {
 }
 
 function renderHistory() {
-  const scroll = document.getElementById('history-scroll');
+  const scroll = document.getElementById('history-strip');
   const hist   = loadHistory();
 
   scroll.innerHTML = '';

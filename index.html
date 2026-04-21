@@ -15,6 +15,31 @@
       <button class="mode-btn"        data-mode="bags"  role="tab">Bags</button>
     </div>
 
+    <!-- Current photo circle -->
+    <div class="photo-wrapper" id="photo-wrapper"
+         role="button" tabindex="0" aria-label="Upload photo to add count">
+      <img id="display-photo" src="cover.jpg" alt="Current photo"
+           onerror="this.style.display='none';
+                    document.getElementById('photo-placeholder').style.display='flex';">
+      <div class="photo-placeholder" id="photo-placeholder" style="display:none;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5">
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span>Tap to add</span>
+      </div>
+      <div class="upload-hint">Tap to add +1</div>
+    </div>
+
+    <!-- History strip — sits directly under the photo -->
+    <div class="history-strip" id="history-strip">
+      <span class="history-empty" id="history-empty">No uploads yet</span>
+    </div>
+
+    <input type="file" id="photo-input" accept="image/*"
+           style="display:none;" aria-hidden="true">
+
     <!-- Count -->
     <div class="count-display">
       <span class="count-number" id="count-number">0</span>
@@ -34,27 +59,19 @@
 
     <!-- Upload -->
     <button class="upload-btn" id="upload-btn">Add +1 with photo</button>
-    <input  type="file" id="photo-input" accept="image/*"
-            style="display:none;" aria-hidden="true">
-
-    <!-- History -->
-    <div class="history-section">
-      <span class="history-label">History</span>
-      <div class="history-scroll" id="history-scroll">
-        <span class="history-empty" id="history-empty">No uploads yet</span>
-      </div>
-    </div>
 
     <span class="timer">Resets in <span id="countdown">--:--:--</span></span>
 
   </div>
 
-  <!-- Lightbox -->
-  <div class="lightbox" id="lightbox" style="display:none;" role="dialog" aria-modal="true">
+  <!-- Lightbox for full-size history photo -->
+  <div class="lightbox" id="lightbox" style="display:none;"
+       role="dialog" aria-modal="true">
     <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
     <img id="lightbox-img" src="" alt="Full size photo">
     <div class="lightbox-info" id="lightbox-info"></div>
-    <span class="lightbox-close" id="lightbox-close" role="button" tabindex="0">×</span>
+    <span class="lightbox-close" id="lightbox-close"
+          role="button" tabindex="0">×</span>
   </div>
 
   <script src="app.js"></script>
