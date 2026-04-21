@@ -369,7 +369,14 @@ body {
 .upload-btn:hover  { background: #fff; }
 .upload-btn:active { transform: scale(0.98); }
 
-/* ── Timer ── */
+/* ── Timer row ── */
+.timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .timer {
   font-size: 0.75rem;
   color: #333;
@@ -377,6 +384,22 @@ body {
 }
 
 #countdown { font-variant-numeric: tabular-nums; }
+
+.reset-btn {
+  background: none;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #444;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.reset-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
 
 /* ── Lightbox ── */
 .lightbox {
