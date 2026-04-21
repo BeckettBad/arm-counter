@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finger Counter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header">
+      <a href="index.html" class="back-btn" aria-label="Back to arm counter">←</a>
+      <h1 id="page-title">Arm ? Fingers</h1>
+    </div>
+
+    <!-- Finger photo circle -->
+    <div class="finger-photo-wrapper" id="finger-photo-wrapper" role="button" aria-label="Upload finger photo" tabindex="0">
+      <div class="photo-placeholder" id="finger-placeholder">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <span>No photo yet</span>
+      </div>
+      <img id="finger-photo" src="" alt="Current finger photo" style="display:none;">
+      <div class="upload-overlay">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span>Upload new photo</span>
+      </div>
+    </div>
+
+    <input type="file" id="finger-photo-input" accept="image/*" style="display:none;" aria-hidden="true">
+
+    <!-- Counter -->
+    <div class="counter-section">
+      <div class="count-display">
+        <span class="big-count" id="finger-count">0</span>
+        <span class="label finger-label">fingers</span>
+      </div>
+      <div class="finger-controls">
+        <button class="btn-large" id="finger-minus" aria-label="Remove finger">−</button>
+        <button class="btn-large" id="finger-plus" aria-label="Add finger">+</button>
+      </div>
+    </div>
+
+    <p class="subtitle" id="upload-hint">Tap the photo when you add a finger to update it.</p>
+  </div>
+
+  <script src="fingers.js"></script>
+</body>
+</html>
