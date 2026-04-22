@@ -1,20 +1,18 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
 import {
   getFirestore, doc, collection,
   onSnapshot, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, getDocs, runTransaction,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
 
-// ── Paste your Firebase project config here ───────────────────────────────────
 const firebaseConfig = {
-  apiKey:            'YOUR_API_KEY',
-  authDomain:        'YOUR_PROJECT.firebaseapp.com',
-  projectId:         'YOUR_PROJECT_ID',
-  storageBucket:     'YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId:             'YOUR_APP_ID',
+  apiKey:            'AIzaSyC55QDZz-V2b-ERSRXYsfDxQiml-zxLXIw',
+  authDomain:        'linecounter-5511d.firebaseapp.com',
+  projectId:         'linecounter-5511d',
+  storageBucket:     'linecounter-5511d.firebasestorage.app',
+  messagingSenderId: '1052947378797',
+  appId:             '1:1052947378797:web:185050a4d31ea4696d0564',
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 const fbApp = initializeApp(firebaseConfig);
 const db    = getFirestore(fbApp);
